@@ -1,7 +1,9 @@
 wifi.setmode(wifi.STATION)
 wifi.sta.config("Illuminati","jarektalib666")
 gpio14 = 5
-
+gpio12 = 6
+motionSensor = 0
+gpio.mode(gpio12,gpio.INPUT)
 print('aaaaaaaaaa')
 print(wifi.sta.status())
 local readData = function() 
@@ -13,6 +15,8 @@ local readData = function()
     elseif( status == dht.ERROR_TIMEOUT ) then
       print( "DHT Time out." );
     end
+    motionSensor = gpio.read(gpio12)
+    print(motionSensor)
 end
 local sendData = function()
     conn=net.createConnection(net.TCP, 0) 
