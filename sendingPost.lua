@@ -21,8 +21,8 @@ end
 local sendData = function()
     conn=net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
-    conn:on("connection", function(conn) conn:send("POST /temperature HTTP/1.1\r\nHost: termometr.senhadri.pl\r\n"
-        .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: 17\r\n\r\ntemperature="..temp.."\r\n\r\n") end)
+    conn:on("connection", function(conn) conn:send("POST /sensor1 HTTP/1.1\r\nHost: termometr.senhadri.pl\r\n"
+        .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: 30\r\n\r\ntemperature="..temp.."&humidity="..humi.."\r\n\r\n") end)
     conn:on("disconnection", function(conn) conn:close() end)
     conn:connect(80, "termometr.senhadri.pl")
 end
