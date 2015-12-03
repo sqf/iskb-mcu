@@ -1,5 +1,5 @@
 wifi.setmode(wifi.STATION)
-require('wifiAuth')
+require('configuration')
 wifi.sta.config(ssid, pass)
 gpio14 = 5
 gpio12 = 6
@@ -30,7 +30,7 @@ local sendTempAndHumi = function()
     local contentLength = string.len(temp..humi..placeName..status) + key
     conn = net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
-    conn:on("connection", function(conn) conn:send("POST /sensor1 HTTP/1.1\r\nHost: iskb.senhadri.pl\r\n"
+    conn:on("connection", function(conn) conn:send("POST /measurement HTTP/1.1\r\nHost: iskb.senhadri.pl\r\n"
         .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: "..contentLength.."\r\n\r\ntemperature="..temp.."&humidity="..humi.."&place_name="..placeName
         .."&status="..status.."\r\n\r\n") end)
     conn:on("disconnection", function(conn) conn:close() end)
@@ -43,7 +43,7 @@ local sendMovement = function()
     local contentLength = string.len(placeName) + key
     conn = net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
-    conn:on("connection", function(conn) conn:send("POST /movement1 HTTP/1.1\r\nHost: iskb.senhadri.pl\r\n"
+    conn:on("connection", function(conn) conn:send("POST /movement HTTP/1.1\r\nHost: iskb.senhadri.pl\r\n"
         .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: "..contentLength.."\r\n\r\nplace_name="..placeName.."\r\n\r\n") end)
     conn:on("disconnection", function(conn) conn:close() end)
     conn:connect(80, "iskb.senhadri.pl")
