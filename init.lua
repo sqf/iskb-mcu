@@ -24,8 +24,8 @@ local readAndThenSendData = function()
 end
 
 function sendData(temp, humi, status)
-    local key = 42
-    local contentLength = string.len(temp..humi..status..placeName) + key;
+    local constantPart = 42;
+    local contentLength = string.len(temp..humi..status..placeName) + constantPart;
     print(contentLength)
     conn = net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
@@ -43,8 +43,8 @@ end
 
 local sendMovement = function()
     print("movement!!!")
-    local key = 11
-    local contentLength = string.len(placeName) + key
+    local constantPart = 11
+    local contentLength = string.len(placeName) + constantPart;
     print(contentLength)
     conn = net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
@@ -60,4 +60,4 @@ local sendMovement = function()
 end
 
 gpio.trig(gpio12, "up", sendMovement)
-tmr.alarm(1, 3000, 1, readAndThenSendData)
+tmr.alarm(1, interval, 1, readAndThenSendData)
