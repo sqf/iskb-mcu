@@ -9,29 +9,31 @@ print(wifi.sta.status())
 
 local readTempAndHumi = function () 
     local status, temp, humi = dht.readxx(gpio14)
-    local measurements = {
-        {"temperature", "humidity", "status"}
-    }
+    local measurements = {temperature, humidity, status}
     if (status == dht.OK) then
-        measurements[2] = {temp, humi, "OK"};
+        measurements.temperature = temp;
+        measurements.humidity = humi;
+        measurements.status = "OK";
         print("DHT Temperature:"..temp..";".."Humidity:"..humi);
         return measurements;
     elseif (status == dht.ERROR_CHECKSUM) then
-        measurements[2] = {0, 0, "Sensor checksum error."};
+        measurements.temperature = 0;
+        measurements.humidity = 0;
+        measurements.status = "Sensor checksum error.";
         print("Sensor checksum error.");
         return measurements;
     elseif (status == dht.ERROR_TIMEOUT) then
-        measurements[2] = {0, 0, "Sensor time out."};
+        measurements.temperature = 0;
+        measurements.humidity = 0;
+        measurements.status = "Sensor time out.";
         print("Sensor time out.");
         return measurements;
     end
 end
-local generatePostMessage = function (route, keysAndValuesTable) 
-    local numberOfKeys = #keysAndValuesTable[1];
+local generatePostMessage = function (route, map)
     local keysAndValues = "";
-    for i = 1, numberOfKeys, 1
-    do
-        keysAndValues = keysAndValues..keysAndValuesTable[1][i].."="..keysAndValuesTable[2][i].."&"
+    for key, value in pairs(map) do
+        keysAndValues = keysAndValues..key.."="..value.."&"
     end
     local keysAndValues = string.sub(keysAndValues, 1, string.len(keysAndValues) - 1); -- deleting "&" at end
     local contentLength = string.len(keysAndValues);
@@ -53,16 +55,15 @@ function makeRequest(message)
 end
 
 local readAndThenSendTempAndHumi = function ()
-    local keysAndValuesTable = readTempAndHumi();
-    table.insert(keysAndValuesTable[1], "place_name");
-    table.insert(keysAndValuesTable[2], placeName);
-    local postMessage = generatePostMessage("/measurement", keysAndValuesTable);
+    local map = readTempAndHumi();
+    map.place_name = placeName;
+    local postMessage = generatePostMessage("/measurement", map);
     makeRequest(postMessage);
 end
 
 local sendMovement = function ()
-    local keysAndValuesTable = {{"place_name"}, {placeName}};
-    local postMessage = generatePostMessage("/movement", keysAndValuesTable);
+    local map = {place_name = placeName};
+    local postMessage = generatePostMessage("/movement", map);
     makeRequest(postMessage);
 end
 
