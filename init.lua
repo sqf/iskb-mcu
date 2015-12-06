@@ -7,57 +7,64 @@ gpio.mode(gpio12, gpio.INT)
 print('aaaaaaaaaa')
 print(wifi.sta.status())
 
-local readAndThenSendData = function() 
+local readTempAndHumi = function () 
     local status, temp, humi = dht.readxx(gpio14)
+    local measurements = {
+        {"temperature", "humidity", "status"}
+    }
     if (status == dht.OK) then
-        sendData(temp, humi, "OK");
+        measurements[2] = {temp, humi, "OK"};
         print("DHT Temperature:"..temp..";".."Humidity:"..humi);
+        return measurements;
     elseif (status == dht.ERROR_CHECKSUM) then
-        sendData(0, 0, "DHT Checksum error.");
-        print("DHT Checksum error.");
+        measurements[2] = {0, 0, "Sensor checksum error."};
+        print("Sensor checksum error.");
+        return measurements;
     elseif (status == dht.ERROR_TIMEOUT) then
-        sendData(0, 0, "DHT Time out.");
-        print("DHT Time out.");
-    else
-        sendData(0, 0, "Unknown sensor error.");
+        measurements[2] = {0, 0, "Sensor time out."};
+        print("Sensor time out.");
+        return measurements;
     end
 end
-
-function sendData(temp, humi, status)
-    local constantPart = 42;
-    local contentLength = string.len(temp..humi..status..placeName) + constantPart;
-    print(contentLength)
-    conn = net.createConnection(net.TCP, 0) 
-    conn:on("receive", function(conn, pl) print(pl) end)
-    conn:on("connection",
-        function(conn)
-            conn:send("POST /measurement HTTP/1.1\r\nHost: iskb.senhadri.pl\r\n"
+local generatePostMessage = function (route, keysAndValuesTable) 
+    local numberOfKeys = #keysAndValuesTable[1];
+    local keysAndValues = "";
+    for i = 1, numberOfKeys, 1
+    do
+        keysAndValues = keysAndValues..keysAndValuesTable[1][i].."="..keysAndValuesTable[2][i].."&"
+    end
+    local keysAndValues = string.sub(keysAndValues, 1, string.len(keysAndValues) - 1); -- deleting "&" at end
+    local contentLength = string.len(keysAndValues);
+    return "POST "..route.." HTTP/1.1\r\nHost: "..targetHost.."\r\n"
             .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: "
-            ..contentLength.."\r\n\r\ntemperature="..temp.."&humidity="..humi..
-            "&place_name="..placeName.."&status="..status.."\r\n\r\n")
-        end
-    )
-    conn:on("disconnection", function(conn) conn:close() end)
-    conn:connect(80, "iskb.senhadri.pl")
+            ..contentLength.."\r\n\r\n"..keysAndValues.."\r\n\r\n"
 end
 
-local sendMovement = function()
-    print("movement!!!")
-    local constantPart = 11
-    local contentLength = string.len(placeName) + constantPart;
-    print(contentLength)
+function makeRequest(message)
     conn = net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
+    conn:connect(80, targetHost)
     conn:on("connection",
         function(conn)
-            conn:send("POST /movement HTTP/1.1\r\nHost: iskb.senhadri.pl\r\n"
-            .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: "
-            ..contentLength.."\r\n\r\nplace_name="..placeName.."\r\n\r\n")
+            conn:send(message)
         end
     )
     conn:on("disconnection", function(conn) conn:close() end)
-    conn:connect(80, "iskb.senhadri.pl")
+end
+
+local readAndThenSendTempAndHumi = function ()
+    local keysAndValuesTable = readTempAndHumi();
+    table.insert(keysAndValuesTable[1], "place_name");
+    table.insert(keysAndValuesTable[2], placeName);
+    local postMessage = generatePostMessage("/measurement", keysAndValuesTable);
+    makeRequest(postMessage);
+end
+
+local sendMovement = function ()
+    local keysAndValuesTable = {{"place_name"}, {placeName}};
+    local postMessage = generatePostMessage("/movement", keysAndValuesTable);
+    makeRequest(postMessage);
 end
 
 gpio.trig(gpio12, "up", sendMovement)
-tmr.alarm(1, interval, 1, readAndThenSendData)
+tmr.alarm(1, interval, 1, readAndThenSendTempAndHumi)

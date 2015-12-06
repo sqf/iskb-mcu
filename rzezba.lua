@@ -13,7 +13,7 @@ local readTempAndHumi = function ()
         {"temperature", "humidity", "status"}
     }
     if (status == dht.OK) then
-        measurements[2] = {temp, humi, "ok"};
+        measurements[2] = {temp, humi, "OK"};
         print("DHT Temperature:"..temp..";".."Humidity:"..humi);
         return measurements;
     elseif (status == dht.ERROR_CHECKSUM) then
@@ -26,7 +26,7 @@ local readTempAndHumi = function ()
         return measurements;
     end
 end
-local makePostMessage = function (route, keysAndValuesTable) 
+local generatePostMessage = function (route, keysAndValuesTable) 
     local numberOfKeys = #keysAndValuesTable[1];
     local keysAndValues = "";
     for i = 1, numberOfKeys, 1
@@ -34,51 +34,36 @@ local makePostMessage = function (route, keysAndValuesTable)
         keysAndValues = keysAndValues..keysAndValuesTable[1][i].."="..keysAndValuesTable[2][i].."&"
     end
     local keysAndValues = string.sub(keysAndValues, 1, string.len(keysAndValues) - 1); -- deleting "&" at end
-    print(keysAndValues)
     local contentLength = string.len(keysAndValues);
-    print(contentLength)
     return "POST "..route.." HTTP/1.1\r\nHost: "..targetHost.."\r\n"
             .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: "
             ..contentLength.."\r\n\r\n"..keysAndValues.."\r\n\r\n"
 end
 
-function sendData(message)
+function makeRequest(message)
     conn = net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
+    conn:connect(80, targetHost)
     conn:on("connection",
         function(conn)
-            print(message)
             conn:send(message)
         end
     )
     conn:on("disconnection", function(conn) conn:close() end)
-    conn:connect(80, targetHost)
 end
 
 local readAndThenSendTempAndHumi = function ()
-    local keysAndValues = readTempAndHumi();
-    table.insert(keysAndValues[1], "place_name");
-    table.insert(keysAndValues[2], placeName);
-    local postMessage = makePostMessage("/measurement", keysAndValues);
-    sendData(postMessage);
+    local keysAndValuesTable = readTempAndHumi();
+    table.insert(keysAndValuesTable[1], "place_name");
+    table.insert(keysAndValuesTable[2], placeName);
+    local postMessage = generatePostMessage("/measurement", keysAndValuesTable);
+    makeRequest(postMessage);
 end
 
-local sendMovement = function()
-    print("movement!!!")
-    local constantPart = 11
-    local contentLength = string.len(placeName) + constantPart;
-    print(contentLength)
-    conn = net.createConnection(net.TCP, 0) 
-    conn:on("receive", function(conn, pl) print(pl) end)
-    conn:on("connection",
-        function(conn)
-            conn:send("POST /movement HTTP/1.1\r\nHost: iskb.senhadri.pl\r\n"
-            .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: "
-            ..contentLength.."\r\n\r\nplace_name="..placeName.."\r\n\r\n")
-        end
-    )
-    conn:on("disconnection", function(conn) conn:close() end)
-    conn:connect(80, "iskb.senhadri.pl")
+local sendMovement = function ()
+    local keysAndValuesTable = {{"place_name"}, {placeName}};
+    local postMessage = generatePostMessage("/movement", keysAndValuesTable);
+    makeRequest(postMessage);
 end
 
 gpio.trig(gpio12, "up", sendMovement)

@@ -38,12 +38,13 @@ end
 function sendData(temp, humi, status)
     local key = 42
     local contentLength = string.len(temp..humi..placeName..status) + key
+    print(contentLength)
     conn = net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
     conn:on("connection", function(conn) conn:send("POST /measurement HTTP/1.1\r\nHost: iskb.senhadri.pl\r\n"
         .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: "..contentLength..
-        "\r\n\r\ntemperature="..temp.."&humidity="..humi.."&place_name="..placeName..
-        "&status="..status.."\r\n\r\n") end)
+        "\r\n\r\ntemperature="..temp.."&humidity="..humi.."&status="..status.."&place_name="..placeName..
+        "\r\n\r\n") end)
     conn:on("disconnection", function(conn) conn:close() end)
     conn:connect(80, "iskb.senhadri.pl")
 end
@@ -52,6 +53,7 @@ local sendMovement = function()
     print("movement!!!")
     local key = 11
     local contentLength = string.len(placeName) + key
+    print(contentLength)
     conn = net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
     conn:on("connection", function(conn) conn:send("POST /movement HTTP/1.1\r\nHost: iskb.senhadri.pl\r\n"
