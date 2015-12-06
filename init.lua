@@ -1,10 +1,10 @@
 wifi.setmode(wifi.STATION)
 require('configuration')
 wifi.sta.config(ssid, pass)
-gpio14 = 5
-gpio12 = 6
+local gpio14 = 5
+local gpio12 = 6
 gpio.mode(gpio12, gpio.INT)
-print('aaaaaaaaaa')
+print('aaaaaaaaaa2')
 print(wifi.sta.status())
 
 local readTempAndHumi = function () 
@@ -30,16 +30,17 @@ local readTempAndHumi = function ()
         return measurements;
     end
 end
-local generatePostMessage = function (route, map)
+
+local generatePostMessage = function (route, measurements)
     local keysAndValues = "";
-    for key, value in pairs(map) do
+    for key, value in pairs(measurements) do
         keysAndValues = keysAndValues..key.."="..value.."&"
     end
-    local keysAndValues = string.sub(keysAndValues, 1, string.len(keysAndValues) - 1); -- deleting "&" at end
+    keysAndValues = string.sub(keysAndValues, 1, string.len(keysAndValues) - 1); -- deleting "&" at end
     local contentLength = string.len(keysAndValues);
     return "POST "..route.." HTTP/1.1\r\nHost: "..targetHost.."\r\n"
             .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: "
-            ..contentLength.."\r\n\r\n"..keysAndValues.."\r\n\r\n"
+            ..contentLength.."\r\n\r\n"..keysAndValues
 end
 
 function makeRequest(message)
@@ -55,15 +56,15 @@ function makeRequest(message)
 end
 
 local readAndThenSendTempAndHumi = function ()
-    local map = readTempAndHumi();
-    map.place_name = placeName;
-    local postMessage = generatePostMessage("/measurement", map);
+    local measurements = readTempAndHumi();
+    measurements.place_name = placeName;
+    local postMessage = generatePostMessage("/measurement", measurements);
     makeRequest(postMessage);
 end
 
 local sendMovement = function ()
-    local map = {place_name = placeName};
-    local postMessage = generatePostMessage("/movement", map);
+    local movement = {place_name = placeName};
+    local postMessage = generatePostMessage("/movement", movement);
     makeRequest(postMessage);
 end
 
