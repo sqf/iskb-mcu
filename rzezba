@@ -26,35 +26,37 @@ local readTempAndHumi = function ()
         return measurements;
     end
 end
-local makePostMessage = function (keysAndValuesTable) 
+local makePostMessage = function (route, keysAndValuesTable) 
     local numberOfKeys = #keysAndValuesTable[1];
     local keysAndValues = "";
     for i = 1, numberOfKeys, 1
     do
         keysAndValues = keysAndValues..keysAndValuesTable[1][i].."="..keysAndValuesTable[2][i].."&"
     end
-    keysAndValues = string.sub(keysAndValues, 1, string.len(keysAndValues) - 1) -- deleting "&" at end
+    keysAndValues = string.sub(keysAndValues, 1, string.len(keysAndValues) - 1); -- deleting "&" at end
     contentLength = string.len(keysAndValues);
-    return "POST /measurement HTTP/1.1\r\nHost: iskb.senhadri.pl\r\n"
+    return "POST /"..route.." HTTP/1.1\r\nHost: "..targetHost.."\r\n"
             .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: "
             ..contentLength.."\r\n\r\n"..keysAndValues.."\r\n\r\n"
-    end
-function sendData(readTempAndHumi)
-    local constantPart = 42;
-    local contentLength = string.len(temp..humi..status..placeName) + constantPart;
+end
+
+function sendData(message)
     print(contentLength)
     conn = net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
     conn:on("connection",
         function(conn)
-            conn:send("POST /measurement HTTP/1.1\r\nHost: iskb.senhadri.pl\r\n"
-            .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: "
-            ..contentLength.."\r\n\r\ntemperature="..temp.."&humidity="..humi..
-            "&place_name="..placeName.."&status="..status.."\r\n\r\n")
+            conn:send(message)
         end
     )
     conn:on("disconnection", function(conn) conn:close() end)
-    conn:connect(80, "iskb.senhadri.pl")
+    conn:connect(80, targetHost)
+end
+
+local readAndThenSendTempAndHumi = function ()
+    local measurements = readTempAndHumi();
+    local postMessage = makePostMessage("/measurements", measurements);
+    sendData(postMessage);
 end
 
 local sendMovement = function()
