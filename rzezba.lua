@@ -31,22 +31,22 @@ local readTempAndHumi = function ()
     end
 end
 
-local generatePostMessage = function (route, measurements)
+local generatePostMessage = function (requestUri, host, keysAndValuesTable)
     local keysAndValues = "";
-    for key, value in pairs(measurements) do
+    for key, value in pairs(keysAndValuesTable) do
         keysAndValues = keysAndValues..key.."="..value.."&"
     end
     keysAndValues = string.sub(keysAndValues, 1, string.len(keysAndValues) - 1); -- deleting "&" at end
     local contentLength = string.len(keysAndValues);
-    return "POST "..route.." HTTP/1.1\r\nHost: "..targetHost.."\r\n"
+    return "POST "..requestUri.." HTTP/1.1\r\nHost: "..host.."\r\n"
             .."Content-Type: application/x-www-form-urlencoded\r\nContent-Length: "
             ..contentLength.."\r\n\r\n"..keysAndValues
 end
 
-function makeRequest(message)
+function makeRequest(host, message)
     conn = net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
-    conn:connect(80, targetHost)
+    conn:connect(80, host)
     conn:on("connection",
         function(conn)
             conn:send(message)
@@ -58,14 +58,14 @@ end
 local readAndThenSendTempAndHumi = function ()
     local measurements = readTempAndHumi();
     measurements.place_name = placeName;
-    local postMessage = generatePostMessage("/measurement", measurements);
-    makeRequest(postMessage);
+    local postMessage = generatePostMessage("/measurement", targetHost, measurements);
+    makeRequest(targetHost, postMessage);
 end
 
 local sendMovement = function ()
     local movement = {place_name = placeName};
-    local postMessage = generatePostMessage("/movement", movement);
-    makeRequest(postMessage);
+    local postMessage = generatePostMessage("/movement", targetHost, movement);
+    makeRequest(targetHost, postMessage);
 end
 
 gpio.trig(gpio12, "up", sendMovement)
