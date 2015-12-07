@@ -1,13 +1,13 @@
-wifi.setmode(wifi.STATION)
-require('configuration')
-wifi.sta.config(ssid, pass)
-local gpio14 = 5
-local gpio12 = 6
-gpio.mode(gpio12, gpio.INT)
-print('aaaaaaaaaa2')
-print(wifi.sta.status())
+wifi.setmode(wifi.STATION);
+require('configuration');
+wifi.sta.config(ssid, pass);
+local gpio14 = 5;
+local gpio12 = 6;
+gpio.mode(gpio12, gpio.INT);
+print('aaaaaaaaaa3');
+print(wifi.sta.status());
 
-local readTempAndHumi = function () 
+local function readTempAndHumi() 
     local status, temp, humi = dht.readxx(gpio14)
     local measurements = {temperature, humidity, status}
     if (status == dht.OK) then
@@ -31,7 +31,7 @@ local readTempAndHumi = function ()
     end
 end
 
-local generatePostMessage = function (requestUri, host, keysAndValuesTable)
+local function generatePostMessage (requestUri, host, keysAndValuesTable)
     local keysAndValues = "";
     for key, value in pairs(keysAndValuesTable) do
         keysAndValues = keysAndValues..key.."="..value.."&"
@@ -43,7 +43,7 @@ local generatePostMessage = function (requestUri, host, keysAndValuesTable)
             ..contentLength.."\r\n\r\n"..keysAndValues
 end
 
-function makeRequest(host, message)
+local function makeRequest(host, message)
     conn = net.createConnection(net.TCP, 0) 
     conn:on("receive", function(conn, pl) print(pl) end)
     conn:connect(80, host)
@@ -55,18 +55,19 @@ function makeRequest(host, message)
     conn:on("disconnection", function(conn) conn:close() end)
 end
 
-local readAndThenSendTempAndHumi = function ()
+local function readAndThenSendTempAndHumi()
     local measurements = readTempAndHumi();
     measurements.place_name = placeName;
-    local postMessage = generatePostMessage("/measurement", targetHost, measurements);
+    local postMessage = generatePostMessage("/measurement",
+        targetHost, measurements);
     makeRequest(targetHost, postMessage);
 end
 
-local sendMovement = function ()
+local function sendMovement()
     local movement = {place_name = placeName};
     local postMessage = generatePostMessage("/movement", targetHost, movement);
     makeRequest(targetHost, postMessage);
 end
 
-gpio.trig(gpio12, "up", sendMovement)
-tmr.alarm(1, interval, 1, readAndThenSendTempAndHumi)
+gpio.trig(gpio12, "up", sendMovement);
+tmr.alarm(1, interval, 1, readAndThenSendTempAndHumi);
