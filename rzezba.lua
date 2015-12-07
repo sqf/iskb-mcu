@@ -4,12 +4,12 @@ wifi.sta.config(ssid, pass);
 local gpio14 = 5;
 local gpio12 = 6;
 gpio.mode(gpio12, gpio.INT);
-print('aaaaaaaaaa3');
+print('aaaaaaaaaa4');
 print(wifi.sta.status());
 
 local function readTempAndHumi() 
-    local status, temp, humi = dht.readxx(gpio14)
-    local measurements = {temperature, humidity, status}
+    local status, temp, humi = dht.readxx(gpio14);
+    local measurements = {};
     if (status == dht.OK) then
         measurements.temperature = temp;
         measurements.humidity = humi;
@@ -31,7 +31,7 @@ local function readTempAndHumi()
     end
 end
 
-local function generatePostMessage (requestUri, host, keysAndValuesTable)
+local function generatePostMessage(requestUri, host, keysAndValuesTable)
     local keysAndValues = "";
     for key, value in pairs(keysAndValuesTable) do
         keysAndValues = keysAndValues..key.."="..value.."&"
