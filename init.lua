@@ -31,7 +31,7 @@ local function readTempAndHumi()
     end
 end
 
-local function generatePostMessage (requestUri, host, keysAndValuesTable)
+local function generatePostMessage(requestUri, host, keysAndValuesTable)
     local keysAndValues = "";
     for key, value in pairs(keysAndValuesTable) do
         keysAndValues = keysAndValues..key.."="..value.."&"
