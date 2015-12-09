@@ -53,13 +53,15 @@ local function makeRequest(host, message)
             conn:send(message)
         end
     )
-    conn:on("receive", function(conn, pl)
+    conn:on("receive", function(conn, payload)
         -- checking respond status
-        if (string.sub(pl, 10, 12) ~= "200") then
-            print(pl)
+        if (string.sub(payload, 10, 12) ~= "200") then
+            print(payload)
         end 
      end)
-    conn:on("disconnection", function(conn) conn:close() end)
+    conn:on("disconnection", function(conn) 
+        conn:close() 
+    end)
 end
 
 local function readAndThenSendTempAndHumi()

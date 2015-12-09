@@ -47,14 +47,21 @@ end
 
 local function makeRequest(host, message)
     conn = net.createConnection(net.TCP, 0) 
-    conn:on("receive", function(conn, pl) print(pl) end)
     conn:connect(80, host)
     conn:on("connection",
         function(conn)
             conn:send(message)
         end
     )
-    conn:on("disconnection", function(conn) conn:close() end)
+    conn:on("receive", function(conn, payload)
+        -- checking respond status
+        if (string.sub(payload, 10, 12) ~= "200") then
+            print(payload)
+        end 
+     end)
+    conn:on("disconnection", function(conn) 
+        conn:close() 
+    end)
 end
 
 local function readAndThenSendTempAndHumi()
